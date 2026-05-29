@@ -1,0 +1,134 @@
+server:
+  port: 9000
+spring:
+  application:
+    name: scloud-gateway
+  profiles:
+    active: dev
+  config:
+    import: optional:nacos:${spring.application.name}-${spring.profiles.active}.yml
+  cloud:
+    nacos:
+      server-addr: ${NACOS_ADDR:127.0.0.1:8848}
+      username: ${NACOS_USERNAME:nacos}
+      password: ${NACOS_PASSWORD:nacos}
+      config:
+        file-extension: yml
+    gateway:
+      server:
+        webflux:
+          globalcors:
+            add-to-simple-url-handler-mapping: true
+            cors-configurations:
+              '[/**]':
+                allowed-origin-patterns:
+                  - "*"
+                allowed-methods:
+                  - GET
+                  - POST
+                  - PUT
+                  - DELETE
+                  - PATCH
+                  - OPTIONS
+                allowed-headers:
+                  - "*"
+                exposed-headers:
+                  - Authorization
+                  - Content-Disposition
+                  - X-Trace-Id
+                allow-credentials: true
+                max-age: 3600
+          default-filters:
+            - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+          routes:
+            - id: openapi-auth
+              uri: ${SCLOUD_AUTH_DOC_URI:http://127.0.0.1:9201}
+              predicates: [ Path=/v3/api-docs/auth ]
+              filters:
+                - SetPath=/v3/api-docs
+            - id: openapi-system
+              uri: ${SCLOUD_SYSTEM_DOC_URI:http://127.0.0.1:9202}
+              predicates: [ Path=/v3/api-docs/system ]
+              filters:
+                - SetPath=/v3/api-docs
+            - id: openapi-demo
+              uri: ${SCLOUD_DEMO_DOC_URI:http://127.0.0.1:9203}
+              predicates: [ Path=/v3/api-docs/demo ]
+              filters:
+                - SetPath=/v3/api-docs
+            - id: openapi-generator
+              uri: ${SCLOUD_GENERATOR_DOC_URI:http://127.0.0.1:9204}
+              predicates: [ Path=/v3/api-docs/generator ]
+              filters:
+                - SetPath=/v3/api-docs
+            - id: scloud-auth
+              uri: lb://scloud-auth
+              predicates: [ Path=/auth/** ]
+              filters:
+                - name: RequestRateLimiter
+                  args:
+                    key-resolver: "#{@remoteAddrKeyResolver}"
+                    redis-rate-limiter.replenishRate: 20
+                    redis-rate-limiter.burstCapacity: 40
+            - id: scloud-system
+              uri: lb://scloud-system
+              predicates: [ Path=/system/** ]
+              filters:
+                - name: RequestRateLimiter
+                  args:
+                    key-resolver: "#{@remoteAddrKeyResolver}"
+                    redis-rate-limiter.replenishRate: 30
+                    redis-rate-limiter.burstCapacity: 60
+            - id: scloud-demo
+              uri: lb://scloud-demo
+              predicates: [ Path=/demo/** ]
+              filters:
+                - name: RequestRateLimiter
+                  args:
+                    key-resolver: "#{@remoteAddrKeyResolver}"
+                    redis-rate-limiter.replenishRate: 30
+                    redis-rate-limiter.burstCapacity: 60
+            - id: scloud-generator
+              uri: lb://scloud-generator
+              predicates: [ Path=/generator/** ]
+              filters:
+                - name: RequestRateLimiter
+                  args:
+                    key-resolver: "#{@remoteAddrKeyResolver}"
+                    redis-rate-limiter.replenishRate: 10
+                    redis-rate-limiter.burstCapacity: 20
+  data:
+    redis:
+      host: ${REDIS_HOST:127.0.0.1}
+      port: ${REDIS_PORT:6379} 
+      password: ${REDIS_PASSWORD:Aa123456} 
+scloud:
+  gateway:
+    jwt-secret: ${JWT_SECRET:scloud-jwt-secret-must-be-at-least-32-bytes}
+knife4j:
+  gateway:
+    enabled: true
+    strategy: manual
+    tags-sorter: order
+    operations-sorter: order
+    routes:
+      - name: 认证中心
+        service-name: scloud-auth
+        url: /v3/api-docs/auth
+        context-path: /auth
+        order: 1
+      - name: 系统服务
+        service-name: scloud-system
+        url: /v3/api-docs/system
+        context-path: /system
+        order: 2
+      - name: 演示服务
+        service-name: scloud-demo
+        url: /v3/api-docs/demo
+        context-path: /demo
+        order: 3
+      - name: 代码生成器
+        service-name: scloud-generator
+        url: /v3/api-docs/generator
+        context-path: /generator
+        order: 4

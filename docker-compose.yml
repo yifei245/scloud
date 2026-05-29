@@ -1,0 +1,91 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: scloud-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: Aa123456
+      MYSQL_DATABASE: scloud
+      TZ: Asia/Shanghai
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./sql/mysql/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./docker/mysql/data:/var/lib/mysql
+
+  redis:
+    image: redis:7.4
+    container_name: scloud-redis
+    command: redis-server --requirepass Aa123456
+    ports:
+      - "6379:6379"
+
+  nacos:
+    image: nacos/nacos-server:v3.0.3
+    container_name: scloud-nacos
+    environment:
+      MODE: standalone
+      NACOS_AUTH_ENABLE: "false"
+    ports:
+      - "8848:8848"
+      - "9848:9848"
+
+  scloud-auth:
+    build:
+      context: .
+      dockerfile: scloud-auth/Dockerfile
+    environment:
+      NACOS_ADDR: nacos:8848
+      MYSQL_HOST: mysql
+      MYSQL_PASSWORD: Aa123456
+      REDIS_HOST: redis
+      REDIS_PASSWORD: Aa123456
+    depends_on: [ mysql, redis, nacos ]
+    ports: [ "9201:9201" ]
+
+  scloud-system:
+    build:
+      context: .
+      dockerfile: scloud-system/Dockerfile
+    environment:
+      NACOS_ADDR: nacos:8848
+      MYSQL_HOST: mysql
+      MYSQL_PASSWORD: Aa123456
+    depends_on: [ mysql, nacos ]
+    ports: [ "9202:9202" ]
+
+  scloud-demo:
+    build:
+      context: .
+      dockerfile: scloud-demo/Dockerfile
+    environment:
+      NACOS_ADDR: nacos:8848
+      MYSQL_HOST: mysql
+      MYSQL_PASSWORD: Aa123456
+    depends_on: [ mysql, nacos ]
+    ports: [ "9203:9203" ]
+
+  scloud-generator:
+    build:
+      context: .
+      dockerfile: scloud-generator/Dockerfile
+    environment:
+      NACOS_ADDR: nacos:8848
+      MYSQL_HOST: mysql
+      MYSQL_PASSWORD: Aa123456
+    depends_on: [ mysql, nacos ]
+    ports: [ "9204:9204" ]
+
+  scloud-gateway:
+    build:
+      context: .
+      dockerfile: scloud-gateway/Dockerfile
+    environment:
+      NACOS_ADDR: nacos:8848
+      REDIS_HOST: redis
+      REDIS_PASSWORD: Aa123456
+      SCLOUD_AUTH_DOC_URI: http://scloud-auth:9201
+      SCLOUD_SYSTEM_DOC_URI: http://scloud-system:9202
+      SCLOUD_DEMO_DOC_URI: http://scloud-demo:9203
+      SCLOUD_GENERATOR_DOC_URI: http://scloud-generator:9204
+    depends_on: [ redis, nacos, scloud-auth, scloud-system, scloud-demo, scloud-generator ]
+    ports: [ "9000:9000" ]
