@@ -50,7 +50,7 @@ mvn -pl scloud-demo spring-boot:run
 mvn -pl scloud-generator spring-boot:run
 mvn -pl scloud-gateway spring-boot:run
 ```
-
+ 
 4. 或完整容器启动：
 
 ```bash
