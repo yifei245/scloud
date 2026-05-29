@@ -34,7 +34,7 @@ JDK 21 + Spring Boot 3.5.x + Spring Cloud 2025.0.x + Spring Cloud Alibaba 的标
 ```bash
 docker compose up -d mysql redis nacos
 ```
-  
+   
 2. 编译：
 
 ```bash
