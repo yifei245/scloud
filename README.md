@@ -1,7 +1,7 @@
 # scloud
 
 JDK 21 + Spring Boot 3.5.x + Spring Cloud 2025.0.x + Spring Cloud Alibaba 的标准微服务脚手架，参考 yudao-cloud / ruoyi-vue-pro 的模块划分与公共能力组织方式。
-
+111111
 ## 版本
 
 - JDK: 21
