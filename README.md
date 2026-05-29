@@ -79,7 +79,7 @@ curl -X POST http://localhost:9000/auth/login \
 
 ## 系统管理接口
 
-`scloud-system` 通过 Gateway 暴露 `/system/**`，默认需要 `Authorization: Bearer <accessToken>`。
+`scloud-system` 通过 Gateway  暴露 `/system/**`，默认需要 `Authorization: Bearer <accessToken>`。
 
 - 用户：`/system/users`，支持增删改查、启用禁用、`/system/users/{id}/roles` 分配角色
 - 角色：`/system/roles`，支持增删改查、启用禁用、`/system/roles/{id}/menus` 分配菜单/按钮权限
